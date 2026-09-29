@@ -1,0 +1,18 @@
+services:
+  # Servicio de Base de Datos
+  db:
+    image: postgres:15-alpine  # Usamos una imagen ligera de PostgreSQL 15
+    container_name: kiri_container
+    restart: always
+    environment:
+      POSTGRES_USER: kiri
+      POSTGRES_PASSWORD: super_secret_kiri
+      POSTGRES_DB: kiri_db
+    ports:
+      - "5435:5432" # Mapea el puerto del contenedor al de su máquina local
+    volumes:
+      - postgres_kiri:/var/lib/postgresql/data  # Persistencia de datos
+
+# Definición del volumen para que los datos no se pierdan al reiniciar
+volumes:
+  postgres_kiri:
