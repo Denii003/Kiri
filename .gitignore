@@ -1,0 +1,10 @@
+# Secretos y entorno
+.env
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Datos locales
+*.db
+minio_data/
