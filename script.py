@@ -1,22 +1,20 @@
+"""Cliente de prueba: inicia sesión, obtiene un JWT y consulta un endpoint protegido.
+Uso:  python script.py <usuario>   (te pedirá la contraseña)
+"""
+import getpass
+import sys
+
 import requests
 
-# URL del endpoint protegido y tu token JWT
-url = "http://127.0.0.1:8000/api/v1/users/"
-token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJSb3NhbGlvIiwiZXhwIjoxNzg5NzA4NzQyfQ.BiIgjtEoodmzuWRdv0BPzoVXD4GOH5SaRJ8C4Ei13XM"
+BASE = "http://127.0.0.1:8000/api/v1/users"
 
-# Encabezados con la autenticación tipo Bearer
-headers = {
-    "accept": "application/json",
-    "Authorization": f"Bearer {token}"
-}
+username = sys.argv[1] if len(sys.argv) > 1 else input("Usuario: ")
+password = getpass.getpass("Contraseña: ")
 
-# Solicitud GET a la API
-response = requests.get(url, headers=headers)
+login = requests.post(f"{BASE}/token", data={"username": username, "password": password})
+if login.status_code != 200:
+    sys.exit(f"Error {login.status_code}: {login.text}")
 
-# Verificación de la respuesta
-if response.status_code == 200:
-    print(" Autenticación exitosa. Respuesta del servidor:")
-    usuarios = response.json()
-    print(usuarios)
-else:
-    print(f" Error {response.status_code}: {response.text}")
+headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+me = requests.get(f"{BASE}/me", headers=headers)
+print("Autenticación exitosa:" if me.ok else f"Error {me.status_code}:", me.json())

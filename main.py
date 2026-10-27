@@ -1,46 +1,49 @@
 # main.py
-from contextlib import asynccontextmanager 
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
-
-#Importacion de archivos previos
-from db.database import create_db_and_tables
-from api.v1.user_api import *
+from api.v1.todo_api import router_todo
+from api.v1.user_api import router as users_router
 from core.cors import setup_cors
+from core.storage import ensure_bucket
+from db.database import create_db_and_tables
+
+logger = logging.getLogger("kiri")
 
 
-
-"""
-Antes usábamos @app.on_event("startup"), pero FastAPI ahora prefiere usar un gestor de contexto (context manager) para manejar el ciclo de vida completo
-"""
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Se ejecuta al iniciar
-    print("Iniciando base de datos...")
+    # Startup
+    logger.info("Iniciando base de datos...")
     create_db_and_tables()
+    try:
+        ensure_bucket()
+    except Exception as exc:  # MinIO apagado no debe impedir que la API arranque
+        logger.warning("MinIO no disponible al iniciar: %s", exc)
     yield
-    # Shutdown: Se ejecuta al cerrar (aquí podrías cerrar conexiones)
-    print("Cerrando aplicación...")
+    # Shutdown
+    logger.info("Cerrando aplicación...")
 
-# Crear la app con lifespan
+
 app = FastAPI(
-    title="FastAPI Mike",
-    description="Mi primera API con FastAPI y SQLModel",
-    version="1.0.0",
-    lifespan=lifespan  # <-- Aquí está el cambio clave
+    title="KIRI API",
+    description="Backend de KIRI: usuarios, autenticación JWT, refrigeradores y almacenamiento en MinIO",
+    version="0.1.0",
+    lifespan=lifespan,
 )
 
-# Configurar CORS desde core
 setup_cors(app)
 
-# Incluir routers
-app.include_router(router, prefix="/api/v1/users", tags=["Users"])
-
+app.include_router(users_router, prefix="/api/v1/users", tags=["Users"])
+app.include_router(router_todo, prefix="/api/v1", tags=["Refrigeradores"])
 
 
 @app.get("/")
 def root():
-    return {"message": "¡Bienvenido a FastAPI Mike!"}
+    return {"message": "¡Bienvenido a KIRI!"}
+
 
 @app.get("/health")
 def health_check():

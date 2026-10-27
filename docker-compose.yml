@@ -1,18 +1,41 @@
 services:
-  # Servicio de Base de Datos
+  # Base de datos PostgreSQL
   db:
-    image: postgres:15-alpine  # Usamos una imagen ligera de PostgreSQL 15
+    image: postgres:15-alpine
     container_name: kiri_container
     restart: always
     environment:
-      POSTGRES_USER: kiri
-      POSTGRES_PASSWORD: super_secret_kiri
-      POSTGRES_DB: kiri_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5435:5432" # Mapea el puerto del contenedor al de su máquina local
+      - "5435:5432"
     volumes:
-      - postgres_kiri:/var/lib/postgresql/data  # Persistencia de datos
+      - postgres_kiri:/var/lib/postgresql/data
+    networks:
+      - kiri_network
 
-# Definición del volumen para que los datos no se pierdan al reiniciar
+  # Almacenamiento de objetos (imágenes) compatible con S3
+  minio:
+    image: chainguard/minio:latest
+    container_name: kiri_minio
+    user: "65532:65532"   # usuario 'nonroot' de la imagen (evita "access denied" en Windows)
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"   # API S3 (la usa el backend)
+      - "9001:9001"   # Consola web de administración
+    volumes:
+      - ./minio_data:/data
+    networks:
+      - kiri_network
+
 volumes:
   postgres_kiri:
+
+networks:
+  kiri_network:
+    driver: bridge

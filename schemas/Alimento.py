@@ -1,8 +1,14 @@
-# schemas.py
-from pydantic import BaseModel, ConfigDict
+# schemas/Alimento.py
 from datetime import date
-from typing import List, Optional
 
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class AlimentoCreate(BaseModel):
+    nombre: str = Field(..., min_length=1)
+    tipo: str = Field(..., min_length=1)
+    cantidad: int = Field(..., ge=0)
+    fecha_caducidad: date
 
 
 class AlimentoOut(BaseModel):
@@ -11,5 +17,5 @@ class AlimentoOut(BaseModel):
     tipo: str
     cantidad: int
     fecha_caducidad: date
-    
+
     model_config = ConfigDict(from_attributes=True)
